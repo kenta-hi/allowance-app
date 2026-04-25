@@ -28,6 +28,12 @@ function getGrade7(days) {
   return 'zero';
 }
 
+// ○×のみ（△なし：ノートチェック用）
+function getGradeNotebook(days) {
+  if (days >= 5) return 'full';
+  return 'zero';
+}
+
 function calcBonus(record) {
   const hw    = ALLOWANCE.HOMEWORK[getGrade7(record.homework)] ?? 0;
   const nb    = ALLOWANCE.NOTEBOOK[getGrade6(record.notebook)] ?? 0;

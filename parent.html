@@ -210,7 +210,7 @@ function render() {
       </div>
       <div class="eval-row">
         <div class="eval-label">ノートチェック <span class="eval-sub">${nb}/6日</span></div>
-        <div style="font-weight:700;color:${gradeColor(nb)}">${gradeLabel(nb)} → ${nbBonusAmt}円</div>
+        <div style="font-weight:700;color:${gradeColorNB(nb)}">${gradeLabelNB(nb)} → ${nbBonusAmt}円</div>
       </div>
     </div>
 
@@ -297,6 +297,12 @@ function gradeColor(days) {
 }
 function gradeColor7(days) {
   return days >= 6 ? '#16a34a' : days === 5 ? '#ca8a04' : '#dc2626';
+}
+function gradeLabelNB(days) {
+  return days >= 5 ? '○' : '×';
+}
+function gradeColorNB(days) {
+  return days >= 5 ? '#16a34a' : '#dc2626';
 }
 
 function setDecl(val) {

@@ -152,7 +152,7 @@
   <div style="background:white;border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left;font-size:13px;color:#555;line-height:1.8;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
     お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・小テスト①②・今週の宣言でボーナスが増えるよ。最大 <strong>1000円</strong> になります。<br>
     宿題 or 予習復習は月〜日の7日チェック。ノートチェックは月〜土の6日チェック。<br>
-    【宿題】0〜4日 🙅 ・ 5日 🔼 ・ 6〜7日 🙆　【ノート】0〜3日 🙅 ・ 4日 🔼 ・ 5〜6日 🙆
+    【宿題】0〜4日 🙅 ・ 5日 🔼 ・ 6〜7日 🙆　【ノート】0〜4日 🙅 ・ 5〜6日 🙆
   </div>
 </header>
 
@@ -268,7 +268,7 @@ function render() {
     <div class="card">
       <div class="card-title">今週の進捗</div>
       ${progressRow('宿題 or 予習復習', summary.homework, ALLOWANCE.HOMEWORK, getGrade7, 7)}
-      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGrade6, 6)}
+      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGradeNotebook, 6)}
     </div>
 
     <!-- 今週の予想 -->
