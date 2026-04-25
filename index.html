@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今週のおこづかい</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f0f4ff;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    header { text-align: center; padding: 20px 0 12px; }
+    header h1 { font-size: 22px; color: #333; }
+
+    /* 曜日セレクター */
+    .day-selector {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .day-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44px;
+      padding: 8px 4px;
+      border-radius: 12px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 12px;
+      color: #888;
+    }
+    .day-btn .day-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .day-btn .day-date { font-size: 11px; }
+    .day-btn.today { border-color: #818cf8; color: #4f46e5; }
+    .day-btn.selected { background: #6366f1; border-color: #6366f1; color: white; }
+    .day-btn.has-data::after {
+      content: '●';
+      font-size: 8px;
+      color: #4ade80;
+      margin-top: 2px;
+    }
+    .day-btn.selected.has-data::after { color: #a7f3d0; }
+    .day-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .check-row:last-child { border-bottom: none; }
+    .check-label { font-size: 16px; font-weight: 600; color: #333; }
+    .btn-group { display: flex; gap: 8px; }
+    .btn {
+      width: 52px; height: 40px;
+      border-radius: 10px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.93); }
+    .btn.selected-yes { background: #4ade80; border-color: #22c55e; }
+    .btn.selected-no  { background: #fca5a5; border-color: #ef4444; }
+
+    .progress-item { margin-bottom: 12px; }
+    .progress-item:last-child { margin-bottom: 0; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #555;
+    }
+    .progress-bar { height: 10px; background: #e8e8e8; border-radius: 99px; overflow: hidden; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #818cf8);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+    .grade-badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+    .grade-full { background: #dcfce7; color: #16a34a; }
+    .grade-half { background: #fef9c3; color: #ca8a04; }
+    .grade-zero { background: #fee2e2; color: #dc2626; }
+
+    .amount-display { text-align: center; padding: 8px 0; }
+    .amount-value { font-size: 48px; font-weight: 800; color: #4f46e5; }
+    .amount-unit  { font-size: 20px; color: #4f46e5; }
+    .amount-base  { font-size: 13px; color: #aaa; margin-top: 4px; }
+
+    .save-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .save-btn:active { opacity: 0.85; }
+    .save-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .toast {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 99px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .loading { text-align: center; padding: 60px 0; color: #aaa; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📚 今週の記録</h1>
+</header>
+
+<div id="app">
+  <div class="loading">読み込み中...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const todayStr = getTodayStr();
+const weekId   = getWeekId();
+
+let appData       = null;
+let week          = null;
+let selectedDate  = todayStr;  // 選択中の日付
+
+// 週の6日分（月〜土）の日付文字列を返す
+function getDaysOfWeek(weekId) {
+  const days = [];
+  const base = new Date(weekId + 'T00:00:00');
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    days.push(toLocalDateStr(d));
+  }
+  return days;
+}
+
+const DAY_NAMES = ['月', '火', '水', '木', '金', '土'];
+
+async function init() {
+  try {
+    appData = await API.load();
+    week = getOrCreateWeek(appData, weekId);
+    if (!week.daily[todayStr]) {
+      week.daily[todayStr] = { homework: null, study: null, notebook: null };
+    }
+    render();
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      `<div style="color:red;padding:20px;word-break:break-all">エラー: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+function selectDay(dateStr) {
+  if (dateStr > todayStr) return; // 未来は選択不可
+  selectedDate = dateStr;
+  if (!week.daily[selectedDate]) {
+    week.daily[selectedDate] = { homework: null, study: null, notebook: null };
+  }
+  render();
+}
+
+function render() {
+  const record  = week.daily[selectedDate] ?? { homework: null, study: null, notebook: null };
+  const summary = summarizeWeek(week);
+  const total   = calcTotal(summary);
+  const days    = getDaysOfWeek(weekId);
+
+  const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+  const dateLabel = selectedDateObj.toLocaleDateString('ja-JP',
+    { month: 'long', day: 'numeric', weekday: 'short' });
+
+  document.getElementById('app').innerHTML = `
+    <!-- 曜日セレクター -->
+    <div class="day-selector">
+      ${days.map((d, i) => {
+        const isFuture   = d > todayStr;
+        const isToday    = d === todayStr;
+        const isSelected = d === selectedDate;
+        const hasData    = week.daily[d] &&
+          (week.daily[d].homework !== null || week.daily[d].study !== null || week.daily[d].notebook !== null);
+        const dayNum = new Date(d + 'T00:00:00').getDate();
+        return `<button
+          class="day-btn ${isSelected ? 'selected' : ''} ${isToday && !isSelected ? 'today' : ''} ${hasData ? 'has-data' : ''}"
+          onclick="selectDay('${d}')"
+          ${isFuture ? 'disabled' : ''}>
+          <span class="day-name">${DAY_NAMES[i]}</span>
+          <span class="day-date">${dayNum}</span>
+        </button>`;
+      }).join('')}
+    </div>
+
+    <!-- 選択日のチェック -->
+    <div class="card">
+      <div class="card-title">${dateLabel}の記録</div>
+      ${checkRow('homework', '📝 宿題',     record)}
+      ${checkRow('study',    '📖 予習・復習', record)}
+      ${checkRow('notebook', '🗒️ ノートチェック', record)}
+    </div>
+
+    <!-- 今週の宣言 -->
+    <div class="card">
+      <div class="card-title">📣 今週の宣言</div>
+      <input
+        type="text"
+        id="decl-input"
+        placeholder="今週やること（自由に書いてOK）"
+        value="${week.declaration ?? ''}"
+        oninput="week.declaration = this.value"
+        style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none">
+      ${week.declarationDone === true  ? '<p style="margin-top:8px;color:#16a34a;font-weight:700">✅ 達成！（親が確認済み）</p>' : ''}
+      ${week.declarationDone === false ? '<p style="margin-top:8px;color:#dc2626;font-weight:700">❌ 未達成（親が確認済み）</p>' : ''}
+      ${week.declarationDone === null  ? '<p style="margin-top:8px;color:#aaa;font-size:13px">日曜に親が確認します</p>' : ''}
+    </div>
+
+    <!-- テスト確認（火曜・木曜のみ表示） -->
+    ${testCard(selectedDate, week)}
+
+    <!-- 今週の進捗 -->
+    <div class="card">
+      <div class="card-title">今週の進捗</div>
+      ${progressRow('宿題',      summary.homework, 150)}
+      ${progressRow('予習・復習', summary.study,   100)}
+      ${progressRow('ノート',     summary.notebook, 100)}
+    </div>
+
+    <!-- 今週の予想 -->
+    <div class="card">
+      <div class="card-title">今週の予想おこづかい</div>
+      <div class="amount-display">
+        <div class="amount-base">基本給 ${ALLOWANCE.BASE}円 + ボーナス</div>
+        <div>
+          <span class="amount-value" id="total-val">${total}</span>
+          <span class="amount-unit">円</span>
+        </div>
+        <div class="amount-base">※テスト・宣言は日曜に親が確認</div>
+      </div>
+    </div>
+
+    <button class="save-btn" id="save-btn" onclick="save()">
+      ${dateLabel}の記録を保存
+    </button>
+  `;
+}
+
+function checkRow(key, label, record) {
+  return `
+    <div class="check-row">
+      <span class="check-label">${label}</span>
+      <div class="btn-group">
+        <button class="btn ${record[key] === true  ? 'selected-yes' : ''}"
+          onclick="toggle('${key}', true)">✅</button>
+        <button class="btn ${record[key] === false ? 'selected-no'  : ''}"
+          onclick="toggle('${key}', false)">❌</button>
+      </div>
+    </div>`;
+}
+
+function toggle(key, value) {
+  if (!week.daily[selectedDate]) {
+    week.daily[selectedDate] = { homework: null, study: null, notebook: null };
+  }
+  const rec = week.daily[selectedDate];
+  rec[key] = (rec[key] === value) ? null : value;
+
+  // ボタンの見た目だけ更新（re-renderなし）
+  const btns = document.querySelectorAll(`.check-row`);
+  render(); // 進捗バーも更新したいので再描画
+}
+
+// 曜日番号を返す（0=日,1=月,2=火,3=水,4=木,5=金,6=土）
+function getDow(dateStr) {
+  return new Date(dateStr + 'T00:00:00').getDay();
+}
+
+function testCard(dateStr, week) {
+  const dow = getDow(dateStr);
+  if (dow === 2) { // 火曜 → テスト①
+    const v = week.test1;
+    return `<div class="card">
+      <div class="card-title">📝 テスト① （火曜）</div>
+      <div class="check-row" style="border:none">
+        <span class="check-label">平均点との比較</span>
+        <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
+          ${v === true ? '○ 平均超え +50円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+        </span>
+      </div>
+    </div>`;
+  }
+  if (dow === 4) { // 木曜 → テスト②
+    const v = week.test2;
+    return `<div class="card">
+      <div class="card-title">📝 テスト② （木曜）</div>
+      <div class="check-row" style="border:none">
+        <span class="check-label">平均点との比較</span>
+        <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
+          ${v === true ? '○ 平均超え +50円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+        </span>
+      </div>
+    </div>`;
+  }
+  return ''; // それ以外の曜日は表示なし
+}
+
+function progressRow(label, days, maxBonus) {
+  const grade = getGrade(days);
+  const pct   = Math.round((days / 6) * 100);
+  const gLabel = grade === 'full' ? '○' : grade === 'half' ? '△' : '×';
+  const gClass = `grade-${grade}`;
+  const bonus  = grade === 'full' ? maxBonus : grade === 'half' ? maxBonus / 2 : 0;
+  return `
+    <div class="progress-item">
+      <div class="progress-label">
+        <span>${label} <span class="grade-badge ${gClass}">${gLabel} +${bonus}円</span></span>
+        <span style="color:#888">${days}/6日</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+}
+
+async function save() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  try {
+    await API.save(appData);
+    showToast('保存しました ✓');
+  } catch(e) {
+    showToast('エラーが発生しました');
+  }
+  btn.disabled = false;
+  render();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

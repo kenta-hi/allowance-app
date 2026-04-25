@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>親の確認ページ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #fff8f0;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    header {
+      text-align: center;
+      padding: 20px 0 16px;
+    }
+    header h1 { font-size: 22px; color: #333; }
+    header p  { font-size: 14px; color: #888; margin-top: 4px; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    /* 評価行 */
+    .eval-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .eval-row:last-child { border-bottom: none; }
+    .eval-label { font-size: 15px; color: #333; }
+    .eval-sub   { font-size: 12px; color: #aaa; }
+
+    .grade-box {
+      display: flex;
+      gap: 6px;
+    }
+    .g-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .g-btn:active { transform: scale(0.93); }
+    .g-btn.sel-full { background: #4ade80; border-color: #22c55e; }
+    .g-btn.sel-half { background: #fde68a; border-color: #f59e0b; }
+    .g-btn.sel-zero { background: #fca5a5; border-color: #ef4444; }
+    .g-btn.sel-yes  { background: #4ade80; border-color: #22c55e; }
+    .g-btn.sel-no   { background: #fca5a5; border-color: #ef4444; }
+    .g-btn.sel-skip { background: #e0e0e0; border-color: #aaa; }
+
+    /* 宣言入力 */
+    .decl-input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    .decl-input:focus { outline: none; border-color: #f97316; }
+
+    /* 金額 */
+    .amount-display {
+      text-align: center;
+      padding: 8px 0;
+    }
+    .amount-value { font-size: 52px; font-weight: 800; color: #f97316; }
+    .amount-unit  { font-size: 22px; color: #f97316; }
+
+    .breakdown {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+      line-height: 2;
+    }
+    .breakdown span { color: #333; font-weight: 600; }
+
+    /* ボタン */
+    .confirm-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .confirm-btn:disabled { opacity: 0.5; }
+    .confirm-btn.done { background: #9ca3af; }
+
+    /* 履歴 */
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 15px;
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-date { color: #888; }
+    .history-amount { font-weight: 700; color: #f97316; }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 99px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    .loading { text-align: center; padding: 60px 0; color: #aaa; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- メイン画面 -->
+<div id="main-screen">
+  <header>
+    <h1>👨‍👩‍👧 週次確認</h1>
+    <p id="week-label"></p>
+  </header>
+  <div id="app"><div class="loading">読み込み中...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+let appData = null;
+let week    = null;
+const weekId = getWeekId();
+
+async function init() {
+  appData = await API.loadFresh();  // 親ページは常に最新データを取得
+  week = getOrCreateWeek(appData, weekId);
+  render();
+}
+
+// 親が手動で設定できる値
+let parentData = {
+  test1: week?.test1 ?? null,
+  test2: week?.test2 ?? null,
+  declarationDone: week?.declarationDone ?? null,
+  declaration: week?.declaration ?? '',
+};
+
+function render() {
+  // 親データをweekから同期
+  parentData = {
+    test1: week.test1 ?? null,
+    test2: week.test2 ?? null,
+    declarationDone: week.declarationDone ?? null,
+    declaration: week.declaration ?? '',
+  };
+
+  const summary = { ...summarizeWeek(week), ...parentData };
+  const total   = calcTotal(summary);
+
+  document.getElementById('week-label').textContent =
+    `${weekId} 週`;
+
+  const days = Object.values(week.daily);
+  const hw = days.filter(d => d.homework).length;
+  const st = days.filter(d => d.study).length;
+  const nb = days.filter(d => d.notebook).length;
+  const recorded = days.length;
+
+  document.getElementById('app').innerHTML = `
+
+    <!-- 子供の記録（自動集計） -->
+    <div class="card">
+      <div class="card-title">📊 子供の記録（${recorded}日分）</div>
+      <div class="eval-row">
+        <div class="eval-label">宿題 <span class="eval-sub">${hw}/6日</span></div>
+        <div style="font-weight:700;color:${gradeColor(hw)}">${gradeLabel(hw)} → ${gradeBonus(hw,150)}円</div>
+      </div>
+      <div class="eval-row">
+        <div class="eval-label">予習・復習 <span class="eval-sub">${st}/6日</span></div>
+        <div style="font-weight:700;color:${gradeColor(st)}">${gradeLabel(st)} → ${gradeBonus(st,100)}円</div>
+      </div>
+      <div class="eval-row">
+        <div class="eval-label">ノートチェック <span class="eval-sub">${nb}/6日</span></div>
+        <div style="font-weight:700;color:${gradeColor(nb)}">${gradeLabel(nb)} → ${gradeBonus(nb,100)}円</div>
+      </div>
+    </div>
+
+    <!-- 宣言 -->
+    <div class="card">
+      <div class="card-title">📣 今週の宣言</div>
+      <input class="decl-input" type="text" id="decl-text"
+        placeholder="宣言内容を入力" value="${parentData.declaration}"
+        oninput="parentData.declaration=this.value;updateTotal()">
+      <div class="eval-row" style="border:none;padding-top:0">
+        <span class="eval-label">達成した？</span>
+        <div class="grade-box">
+          <button class="g-btn" id="decl-yes" onclick="setDecl(true)">○ +50円</button>
+          <button class="g-btn" id="decl-no"  onclick="setDecl(false)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- テスト -->
+    <div class="card">
+      <div class="card-title">📝 テスト（平均超えで+50円）</div>
+      <div class="eval-row">
+        <span class="eval-label">テスト① <span style="font-size:12px;color:#aaa">火曜</span></span>
+        <div class="grade-box">
+          <button class="g-btn" id="t1-yes"  onclick="setTest(1,true)">○ 超えた</button>
+          <button class="g-btn" id="t1-no"   onclick="setTest(1,false)">× 未満</button>
+          <button class="g-btn" id="t1-skip" onclick="setTest(1,null)">なし</button>
+        </div>
+      </div>
+      <div class="eval-row">
+        <span class="eval-label">テスト② <span style="font-size:12px;color:#aaa">木曜</span></span>
+        <div class="grade-box">
+          <button class="g-btn" id="t2-yes"  onclick="setTest(2,true)">○ 超えた</button>
+          <button class="g-btn" id="t2-no"   onclick="setTest(2,false)">× 未満</button>
+          <button class="g-btn" id="t2-skip" onclick="setTest(2,null)">なし</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 合計 -->
+    <div class="card">
+      <div class="card-title">💰 今週の合計</div>
+      <div class="amount-display">
+        <div>
+          <span class="amount-value" id="total-amount">${total}</span>
+          <span class="amount-unit">円</span>
+        </div>
+      </div>
+      <div class="breakdown">
+        基本給: <span>${ALLOWANCE.BASE}円</span><br>
+        宿題: <span>${gradeBonus(hw,150)}円</span> /
+        予習: <span>${gradeBonus(st,100)}円</span> /
+        ノート: <span>${gradeBonus(nb,100)}円</span><br>
+        宣言: <span id="bd-decl">${parentData.declarationDone ? 50 : 0}円</span> /
+        テスト: <span id="bd-test">${(parentData.test1?50:0)+(parentData.test2?50:0)}円</span>
+      </div>
+    </div>
+
+    <!-- 確定ボタン -->
+    <button class="confirm-btn ${week.confirmed ? 'done' : ''}"
+      id="confirm-btn"
+      onclick="confirm_()"
+      ${week.confirmed ? 'disabled' : ''}>
+      ${week.confirmed ? `✓ 支払い済み（${week.amount}円）` : '✅ 確定して支払う'}
+    </button>
+
+    <!-- 過去の履歴 -->
+    <div class="card">
+      <div class="card-title">📅 過去の履歴</div>
+      ${historyRows()}
+    </div>
+  `;
+
+  restoreButtons();
+}
+
+function gradeLabel(days) {
+  return days >= 5 ? '○' : days === 4 ? '△' : '×';
+}
+function gradeColor(days) {
+  return days >= 5 ? '#16a34a' : days === 4 ? '#ca8a04' : '#dc2626';
+}
+function gradeBonus(days, max) {
+  return days >= 5 ? max : days === 4 ? max/2 : 0;
+}
+
+function setDecl(val) {
+  parentData.declarationDone = val;
+  restoreButtons();
+  updateTotal();
+}
+function setTest(n, val) {
+  if (n === 1) parentData.test1 = val;
+  else         parentData.test2 = val;
+  restoreButtons();
+  updateTotal();
+}
+
+function restoreButtons() {
+  // 宣言
+  setActive('decl-yes', parentData.declarationDone === true,  'sel-yes');
+  setActive('decl-no',  parentData.declarationDone === false, 'sel-no');
+  // テスト1
+  setActive('t1-yes',  parentData.test1 === true,  'sel-yes');
+  setActive('t1-no',   parentData.test1 === false,  'sel-no');
+  setActive('t1-skip', parentData.test1 === null,   'sel-skip');
+  // テスト2
+  setActive('t2-yes',  parentData.test2 === true,  'sel-yes');
+  setActive('t2-no',   parentData.test2 === false,  'sel-no');
+  setActive('t2-skip', parentData.test2 === null,   'sel-skip');
+}
+
+function setActive(id, cond, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'g-btn' + (cond ? ` ${cls}` : '');
+}
+
+function updateTotal() {
+  const days = Object.values(week.daily);
+  const hw = days.filter(d => d.homework).length;
+  const st = days.filter(d => d.study).length;
+  const nb = days.filter(d => d.notebook).length;
+  const summary = {
+    homework: hw, study: st, notebook: nb,
+    declarationDone: parentData.declarationDone,
+    test1: parentData.test1,
+    test2: parentData.test2,
+  };
+  const total = calcTotal(summary);
+  const el = document.getElementById('total-amount');
+  if (el) el.textContent = total;
+  const bd = document.getElementById('bd-decl');
+  if (bd) bd.textContent = (parentData.declarationDone ? 50 : 0) + '円';
+  const bt = document.getElementById('bd-test');
+  if (bt) bt.textContent = ((parentData.test1?50:0)+(parentData.test2?50:0)) + '円';
+}
+
+async function confirm_() {
+  const days = Object.values(week.daily);
+  const hw = days.filter(d => d.homework).length;
+  const st = days.filter(d => d.study).length;
+  const nb = days.filter(d => d.notebook).length;
+  const summary = {
+    homework: hw, study: st, notebook: nb,
+    declarationDone: parentData.declarationDone,
+    test1: parentData.test1,
+    test2: parentData.test2,
+  };
+  const total = calcTotal(summary);
+
+  week.declarationDone = parentData.declarationDone;
+  week.declaration     = parentData.declaration;
+  week.test1           = parentData.test1;
+  week.test2           = parentData.test2;
+  week.confirmed       = true;
+  week.amount          = total;
+
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+
+  try {
+    await API.save(appData);
+    showToast(`${total}円を記録しました 🎉`);
+    render();
+  } catch(e) {
+    showToast('エラーが発生しました');
+    btn.disabled = false;
+  }
+}
+
+function historyRows() {
+  const past = [...appData.weeks]
+    .filter(w => w.confirmed && w.id !== weekId)
+    .sort((a, b) => b.id.localeCompare(a.id))
+    .slice(0, 8);
+  if (!past.length) return '<div style="color:#ccc;font-size:14px">まだ記録がありません</div>';
+  return past.map(w => `
+    <div class="history-row">
+      <span class="history-date">${w.id}週</span>
+      <span class="history-amount">${w.amount}円</span>
+    </div>
+  `).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
