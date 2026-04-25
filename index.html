@@ -150,9 +150,9 @@
 <header>
   <h1>📚 今週の記録</h1>
   <div style="background:white;border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left;font-size:13px;color:#555;line-height:1.8;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-    お小遣いは毎週 <strong>500円</strong> です。宿題・予習復習・ノートチェック・小テストの結果・今週やることの5つをやったら増えるよ。最大 <strong>1000円</strong> になります。<br>
-    毎日チェックするのは宿題・予習復習・ノートチェック。<br>
-    0〜3日は 🙅 ・ 4〜5日は 🔼 ・ 6〜7日は 🙆
+    お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・小テスト①②・今週の宣言でボーナスが増えるよ。最大 <strong>1000円</strong> になります。<br>
+    宿題 or 予習復習は月〜日の7日チェック。ノートチェックは月〜土の6日チェック。<br>
+    【宿題】0〜4日 🙅 ・ 5日 🔼 ・ 6〜7日 🙆　【ノート】0〜3日 🙅 ・ 4日 🔼 ・ 5〜6日 🙆
   </div>
 </header>
 
@@ -171,11 +171,11 @@ let appData       = null;
 let week          = null;
 let selectedDate  = todayStr;  // 選択中の日付
 
-// 週の6日分（月〜土）の日付文字列を返す
+// 週の7日分（月〜日）の日付文字列を返す
 function getDaysOfWeek(weekId) {
   const days = [];
   const base = new Date(weekId + 'T00:00:00');
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     days.push(toLocalDateStr(d));
@@ -183,14 +183,14 @@ function getDaysOfWeek(weekId) {
   return days;
 }
 
-const DAY_NAMES = ['月', '火', '水', '木', '金', '土'];
+const DAY_NAMES = ['月', '火', '水', '木', '金', '土', '日'];
 
 async function init() {
   try {
     appData = await API.load();
     week = getOrCreateWeek(appData, weekId);
     if (!week.daily[todayStr]) {
-      week.daily[todayStr] = { homework: null, study: null, notebook: null };
+      week.daily[todayStr] = { homework: null, notebook: null };
     }
     render();
   } catch(e) {
@@ -204,13 +204,13 @@ function selectDay(dateStr) {
   if (dateStr > todayStr) return; // 未来は選択不可
   selectedDate = dateStr;
   if (!week.daily[selectedDate]) {
-    week.daily[selectedDate] = { homework: null, study: null, notebook: null };
+    week.daily[selectedDate] = { homework: null, notebook: null };
   }
   render();
 }
 
 function render() {
-  const record  = week.daily[selectedDate] ?? { homework: null, study: null, notebook: null };
+  const record  = week.daily[selectedDate] ?? { homework: null, notebook: null };
   const summary = summarizeWeek(week);
   const total   = calcTotal(summary);
   const days    = getDaysOfWeek(weekId);
@@ -227,7 +227,7 @@ function render() {
         const isToday    = d === todayStr;
         const isSelected = d === selectedDate;
         const hasData    = week.daily[d] &&
-          (week.daily[d].homework !== null || week.daily[d].study !== null || week.daily[d].notebook !== null);
+          (week.daily[d].homework !== null || week.daily[d].notebook !== null);
         const dayNum = new Date(d + 'T00:00:00').getDate();
         return `<button
           class="day-btn ${isSelected ? 'selected' : ''} ${isToday && !isSelected ? 'today' : ''} ${hasData ? 'has-data' : ''}"
@@ -242,8 +242,7 @@ function render() {
     <!-- 選択日のチェック -->
     <div class="card">
       <div class="card-title">${dateLabel}の記録</div>
-      ${checkRow('homework', '📝 宿題',     record)}
-      ${checkRow('study',    '📖 予習・復習', record)}
+      ${checkRow('homework', '📝 宿題 or 予習復習', record)}
       ${checkRow('notebook', '🗒️ ノートチェック', record)}
     </div>
 
@@ -268,9 +267,8 @@ function render() {
     <!-- 今週の進捗 -->
     <div class="card">
       <div class="card-title">今週の進捗</div>
-      ${progressRow('宿題',      summary.homework, ALLOWANCE.HOMEWORK)}
-      ${progressRow('予習・復習', summary.study,   ALLOWANCE.STUDY)}
-      ${progressRow('ノート',     summary.notebook, ALLOWANCE.NOTEBOOK)}
+      ${progressRow('宿題 or 予習復習', summary.homework, ALLOWANCE.HOMEWORK, getGrade7, 7)}
+      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGrade6, 6)}
     </div>
 
     <!-- 今週の予想 -->
@@ -307,7 +305,7 @@ function checkRow(key, label, record) {
 
 function toggle(key, value) {
   if (!week.daily[selectedDate]) {
-    week.daily[selectedDate] = { homework: null, study: null, notebook: null };
+    week.daily[selectedDate] = { homework: null, notebook: null };
   }
   const rec = week.daily[selectedDate];
   rec[key] = (rec[key] === value) ? null : value;
@@ -331,7 +329,7 @@ function testCard(dateStr, week) {
       <div class="check-row" style="border:none">
         <span class="check-label">平均点との比較</span>
         <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
-          ${v === true ? '○ 平均超え +50円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+          ${v === true ? '○ 平均超え +150円' : v === false ? '× 平均未満' : '日曜に親が確認'}
         </span>
       </div>
     </div>`;
@@ -343,7 +341,7 @@ function testCard(dateStr, week) {
       <div class="check-row" style="border:none">
         <span class="check-label">平均点との比較</span>
         <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
-          ${v === true ? '○ 平均超え +50円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+          ${v === true ? '○ 平均超え +150円' : v === false ? '× 平均未満' : '日曜に親が確認'}
         </span>
       </div>
     </div>`;
@@ -351,9 +349,9 @@ function testCard(dateStr, week) {
   return ''; // それ以外の曜日は表示なし
 }
 
-function progressRow(label, days, cfg) {
-  const grade = getGrade(days);
-  const pct   = Math.round((days / 6) * 100);
+function progressRow(label, days, cfg, gradeFn, maxDays) {
+  const grade = gradeFn(days);
+  const pct   = Math.round((days / maxDays) * 100);
   const gLabel = grade === 'full' ? '○' : grade === 'half' ? '△' : '×';
   const gClass = `grade-${grade}`;
   const bonus  = grade === 'full' ? cfg.full : grade === 'half' ? cfg.half : 0;
@@ -361,7 +359,7 @@ function progressRow(label, days, cfg) {
     <div class="progress-item">
       <div class="progress-label">
         <span>${label} <span class="grade-badge ${gClass}">${gLabel} +${bonus}円</span></span>
-        <span style="color:#888">${days}/6日</span>
+        <span style="color:#888">${days}/${maxDays}日</span>
       </div>
       <div class="progress-bar">
         <div class="progress-fill" style="width:${pct}%"></div>
