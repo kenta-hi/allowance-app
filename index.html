@@ -268,9 +268,9 @@ function render() {
     <!-- 今週の進捗 -->
     <div class="card">
       <div class="card-title">今週の進捗</div>
-      ${progressRow('宿題',      summary.homework, 150)}
-      ${progressRow('予習・復習', summary.study,   100)}
-      ${progressRow('ノート',     summary.notebook, 100)}
+      ${progressRow('宿題',      summary.homework, ALLOWANCE.HOMEWORK)}
+      ${progressRow('予習・復習', summary.study,   ALLOWANCE.STUDY)}
+      ${progressRow('ノート',     summary.notebook, ALLOWANCE.NOTEBOOK)}
     </div>
 
     <!-- 今週の予想 -->
@@ -351,12 +351,12 @@ function testCard(dateStr, week) {
   return ''; // それ以外の曜日は表示なし
 }
 
-function progressRow(label, days, maxBonus) {
+function progressRow(label, days, cfg) {
   const grade = getGrade(days);
   const pct   = Math.round((days / 6) * 100);
   const gLabel = grade === 'full' ? '○' : grade === 'half' ? '△' : '×';
   const gClass = `grade-${grade}`;
-  const bonus  = grade === 'full' ? maxBonus : grade === 'half' ? maxBonus / 2 : 0;
+  const bonus  = grade === 'full' ? cfg.full : grade === 'half' ? cfg.half : 0;
   return `
     <div class="progress-item">
       <div class="progress-label">

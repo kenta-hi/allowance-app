@@ -8,11 +8,11 @@ const CONFIG = {
 // お小遣い設定
 const ALLOWANCE = {
   BASE: 500,
-  HOMEWORK:  { full: 150, half: 75  }, // ○/△
+  HOMEWORK:  { full: 150, half: 100 }, // ○/△（割り算しない）
   STUDY:     { full: 100, half: 50  },
   NOTEBOOK:  { full: 100, half: 50  },
   DECLARATION: { full: 50 },
-  TEST:        { full: 50 },           // 1回あたり
+  TEST:        { full: 50 },
 };
 
 // ○△×の判定（週6回ベース）
