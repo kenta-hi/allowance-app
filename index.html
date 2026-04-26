@@ -255,7 +255,7 @@ function render() {
     <div class="card">
       <div class="card-title">今週の進捗</div>
       ${progressRow('宿題 or 予習復習', summary.homework, ALLOWANCE.HOMEWORK, getGrade7, 7)}
-      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGrade6, 6)}
+      ${progressRow('ノート', summary.notebook, ALLOWANCE.NOTEBOOK, d => getGradeNotebookRatio(d, summary.notebookTotal), summary.notebookTotal)}
       ${progressRow('爪を噛まない',     summary.nails,    ALLOWANCE.NAILS,    getGradeNails, 7)}
       ${progressRow('片付け',           summary.cleanup,  ALLOWANCE.CLEANUP,  getGradeCleanup, 7)}
     </div>

@@ -22,10 +22,12 @@ function getGrade7(days) {
   return 'zero';
 }
 
-// ○△×の判定（ノートチェック：6日中6=○, 4-5=△, 0-3=×）
-function getGrade6(days) {
-  if (days === 6) return 'full';
-  if (days >= 4) return 'half';
+// ノートチェック：授業日に対する比率（90%以上=○, 70%以上=△）
+function getGradeNotebookRatio(checks, total) {
+  if (total === 0) return 'zero';
+  const ratio = checks / total;
+  if (ratio >= 0.9) return 'full';
+  if (ratio >= 0.7) return 'half';
   return 'zero';
 }
 
@@ -44,7 +46,7 @@ function getGradeCleanup(days) {
 
 function calcBonus(record) {
   const hw    = ALLOWANCE.HOMEWORK[getGrade7(record.homework)] ?? 0;
-  const nb    = ALLOWANCE.NOTEBOOK[getGrade6(record.notebook)] ?? 0;
+  const nb    = ALLOWANCE.NOTEBOOK[getGradeNotebookRatio(record.notebook, record.notebookTotal)] ?? 0;
   const nl    = ALLOWANCE.NAILS[getGradeNails(record.nails)] ?? 0;
   const cl    = ALLOWANCE.CLEANUP[getGradeCleanup(record.cleanup)] ?? 0;
   const test1 = record.test1 ? ALLOWANCE.TEST.full : 0;
@@ -146,12 +148,18 @@ function getOrCreateWeek(data, weekId) {
 
 // 週の集計（達成日数を計算）
 function summarizeWeek(week) {
-  const days = Object.values(week.daily);
+  const entries = Object.entries(week.daily);
+  const days = entries.map(([, d]) => d);
+  // ノートの分母：月〜土のログ日数（日曜除外）
+  const notebookTotal = entries.filter(([dateStr]) =>
+    new Date(dateStr + 'T00:00:00').getDay() !== 0
+  ).length;
   return {
-    homework:  days.filter(d => d.homework).length,
-    notebook:  days.filter(d => d.notebook).length,
-    nails:     days.filter(d => d.nails).length,
-    cleanup:   days.filter(d => d.cleanup).length,
+    homework:      days.filter(d => d.homework).length,
+    notebook:      days.filter(d => d.notebook).length,
+    notebookTotal,
+    nails:         days.filter(d => d.nails).length,
+    cleanup:       days.filter(d => d.cleanup).length,
     test1: week.test1,
     test2: week.test2,
   };
