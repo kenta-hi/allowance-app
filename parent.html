@@ -194,8 +194,7 @@ function render() {
   const days = entries.map(([, d]) => d);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
-  const nl = days.filter(d => d.nails).length;
-  const cl = days.filter(d => d.cleanup).length;
+  const ht = days.filter(d => d.nails && d.cleanup).length;
   const recorded = days.length;
   const nbTotal = entries.filter(([dateStr]) =>
     new Date(dateStr + 'T00:00:00').getDay() !== 0
@@ -203,8 +202,7 @@ function render() {
   const nbPct = nbTotal > 0 ? Math.round(nb / nbTotal * 100) : 0;
   const hwBonusAmt = ALLOWANCE.HOMEWORK[getGrade7(hw)] ?? 0;
   const nbBonusAmt = ALLOWANCE.NOTEBOOK[getGradeNotebookRatio(nb, nbTotal)] ?? 0;
-  const nlBonusAmt = ALLOWANCE.NAILS[getGradeNails(nl)] ?? 0;
-  const clBonusAmt = ALLOWANCE.CLEANUP[getGradeCleanup(cl)] ?? 0;
+  const htBonusAmt = ALLOWANCE.HABITS[getGradeHabits(ht)] ?? 0;
 
   document.getElementById('app').innerHTML = `
 
@@ -221,12 +219,8 @@ function render() {
         <div style="font-weight:700;color:${gradeColor(nb, nbTotal)}">${gradeLabel(nb, nbTotal)} → ${nbBonusAmt}円</div>
       </div>
       <div class="eval-row">
-        <div class="eval-label">爪を噛まない <span class="eval-sub">${nl}/7日</span></div>
-        <div style="font-weight:700;color:${nl === 7 ? '#16a34a' : '#dc2626'}">${nl === 7 ? '○' : '×'} → ${nlBonusAmt}円</div>
-      </div>
-      <div class="eval-row">
-        <div class="eval-label">片付け <span class="eval-sub">${cl}/7日</span></div>
-        <div style="font-weight:700;color:${gradeColor7(cl)}">${gradeLabel7(cl)} → ${clBonusAmt}円</div>
+        <div class="eval-label">爪+片付け <span class="eval-sub">両方○の日 ${ht}/7日</span></div>
+        <div style="font-weight:700;color:${gradeColor7(ht)}">${gradeLabel7(ht)} → ${htBonusAmt}円</div>
       </div>
     </div>
 
@@ -264,8 +258,7 @@ function render() {
         基本給: <span>${ALLOWANCE.BASE}円</span><br>
         宿題: <span>${hwBonusAmt}円</span> /
         ノート: <span>${nbBonusAmt}円</span> /
-        爪: <span>${nlBonusAmt}円</span> /
-        片付け: <span>${clBonusAmt}円</span><br>
+        爪+片付け: <span>${htBonusAmt}円</span><br>
         テスト: <span id="bd-test">${(parentData.test1?100:0)+(parentData.test2?100:0)}円</span>
       </div>
     </div>
@@ -333,13 +326,12 @@ function updateTotal() {
   const days = Object.values(week.daily);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
-  const nl = days.filter(d => d.nails).length;
-  const cl = days.filter(d => d.cleanup).length;
+  const ht = days.filter(d => d.nails && d.cleanup).length;
   const nbTot = Object.entries(week.daily).filter(([dateStr]) =>
     new Date(dateStr + 'T00:00:00').getDay() !== 0
   ).length;
   const summary = {
-    homework: hw, notebook: nb, notebookTotal: nbTot, nails: nl, cleanup: cl,
+    homework: hw, notebook: nb, notebookTotal: nbTot, habits: ht,
     test1: parentData.test1,
     test2: parentData.test2,
   };
@@ -354,13 +346,12 @@ async function confirm_() {
   const days = Object.values(week.daily);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
-  const nl = days.filter(d => d.nails).length;
-  const cl = days.filter(d => d.cleanup).length;
+  const ht2 = days.filter(d => d.nails && d.cleanup).length;
   const nbTot2 = Object.entries(week.daily).filter(([dateStr]) =>
     new Date(dateStr + 'T00:00:00').getDay() !== 0
   ).length;
   const summary = {
-    homework: hw, notebook: nb, notebookTotal: nbTot2, nails: nl, cleanup: cl,
+    homework: hw, notebook: nb, notebookTotal: nbTot2, habits: ht2,
     test1: parentData.test1,
     test2: parentData.test2,
   };

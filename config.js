@@ -8,11 +8,10 @@ const CONFIG = {
 // お小遣い設定
 const ALLOWANCE = {
   BASE: 500,
-  HOMEWORK:    { full: 150, half: 100 }, // 宿題 or 予習復習（7日: 7=○, 5-6=△）
-  NOTEBOOK:    { full: 200, half: 100 }, // ノートチェック（6日: 6=○, 4-5=△）
-  NAILS:       { full: 100 },            // 爪を噛まない（7日全部のみ○）
-  CLEANUP:     { full: 100, half: 50 }, // 片付け（7日: 6-7=○, 4-5=△, 0-3=×）
-  TEST:        { full: 100 },
+  HOMEWORK:  { full: 200, half: 100 }, // 宿題 or 予習復習（7日: 7=○, 5-6=△）
+  NOTEBOOK:  { full: 200, half: 100 }, // ノートチェック（比率: 90%=○, 70%=△）
+  HABITS:    { full: 150, half: 50  }, // 爪+片付け（両方○の日: 6-7=○, 4-5=△）
+  TEST:      { full: 100 },
 };
 
 // ○△×の判定（宿題 or 予習復習：7日中7=○, 5-6=△, 0-4=×）
@@ -31,14 +30,8 @@ function getGradeNotebookRatio(checks, total) {
   return 'zero';
 }
 
-// ○×のみ（爪を噛まない：7日全部のみ○）
-function getGradeNails(days) {
-  if (days === 7) return 'full';
-  return 'zero';
-}
-
-// ○△×（片付け：7日中 6-7=○, 4-5=△, 0-3=×）
-function getGradeCleanup(days) {
+// ○△×（爪+片付け両方○の日：7日中 6-7=○, 4-5=△, 0-3=×）
+function getGradeHabits(days) {
   if (days >= 6) return 'full';
   if (days >= 4) return 'half';
   return 'zero';
@@ -47,11 +40,10 @@ function getGradeCleanup(days) {
 function calcBonus(record) {
   const hw    = ALLOWANCE.HOMEWORK[getGrade7(record.homework)] ?? 0;
   const nb    = ALLOWANCE.NOTEBOOK[getGradeNotebookRatio(record.notebook, record.notebookTotal)] ?? 0;
-  const nl    = ALLOWANCE.NAILS[getGradeNails(record.nails)] ?? 0;
-  const cl    = ALLOWANCE.CLEANUP[getGradeCleanup(record.cleanup)] ?? 0;
+  const ht    = ALLOWANCE.HABITS[getGradeHabits(record.habits)] ?? 0;
   const test1 = record.test1 ? ALLOWANCE.TEST.full : 0;
   const test2 = record.test2 ? ALLOWANCE.TEST.full : 0;
-  return hw + nb + nl + cl + test1 + test2;
+  return hw + nb + ht + test1 + test2;
 }
 
 function calcTotal(record) {
@@ -158,8 +150,7 @@ function summarizeWeek(week) {
     homework:      days.filter(d => d.homework).length,
     notebook:      days.filter(d => d.notebook).length,
     notebookTotal,
-    nails:         days.filter(d => d.nails).length,
-    cleanup:       days.filter(d => d.cleanup).length,
+    habits:        days.filter(d => d.nails && d.cleanup).length,
     test1: week.test1,
     test2: week.test2,
   };

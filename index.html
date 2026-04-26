@@ -150,9 +150,9 @@
 <header>
   <h1>📚 今週の記録</h1>
   <div style="background:white;border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left;font-size:13px;color:#555;line-height:1.8;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-    お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・爪を噛まない・片付け・小テスト①②でボーナスが増えるよ。最大 <strong>1250円</strong> になります。<br>
-    【宿題】0〜4日🙅 ・ 5〜6日🔼 ・ 7日🙆　【ノート】0〜3日🙅 ・ 4〜5日🔼 ・ 6日🙆<br>
-    【爪】7日全部で+100円　【片付け】0〜3日🙅 ・ 4〜5日🔼 ・ 6〜7日🙆
+    お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・爪+片付け・小テスト①②でボーナスが増えるよ。最大 <strong>1250円</strong> になります。<br>
+    【宿題】0〜4日🙅 ・ 5〜6日🔼 ・ 7日🙆　【ノート】授業日の90%=🙆 / 70%=🔼<br>
+    【爪+片付け】両方できた日が 0〜3日🙅 ・ 4〜5日🔼 ・ 6〜7日🙆
   </div>
 </header>
 
@@ -256,8 +256,7 @@ function render() {
       <div class="card-title">今週の進捗</div>
       ${progressRow('宿題 or 予習復習', summary.homework, ALLOWANCE.HOMEWORK, getGrade7, 7)}
       ${progressRow('ノート', summary.notebook, ALLOWANCE.NOTEBOOK, d => getGradeNotebookRatio(d, summary.notebookTotal), summary.notebookTotal)}
-      ${progressRow('爪を噛まない',     summary.nails,    ALLOWANCE.NAILS,    getGradeNails, 7)}
-      ${progressRow('片付け',           summary.cleanup,  ALLOWANCE.CLEANUP,  getGradeCleanup, 7)}
+      ${progressRow('爪+片付け',         summary.habits,   ALLOWANCE.HABITS,   getGradeHabits, 7)}
     </div>
 
     <!-- 今週の予想 -->
