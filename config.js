@@ -11,7 +11,7 @@ const ALLOWANCE = {
   HOMEWORK:    { full: 150, half: 100 }, // 宿題 or 予習復習（7日: 7=○, 5-6=△）
   NOTEBOOK:    { full: 200, half: 100 }, // ノートチェック（6日: 6=○, 4-5=△）
   NAILS:       { full: 100 },            // 爪を噛まない（7日全部のみ○）
-  DECLARATION: { full: 100 },
+  CLEANUP:     { full: 100, half: 50 }, // 片付け（7日: 6-7=○, 4-5=△, 0-3=×）
   TEST:        { full: 100 },
 };
 
@@ -35,14 +35,21 @@ function getGradeNails(days) {
   return 'zero';
 }
 
+// ○△×（片付け：7日中 6-7=○, 4-5=△, 0-3=×）
+function getGradeCleanup(days) {
+  if (days >= 6) return 'full';
+  if (days >= 4) return 'half';
+  return 'zero';
+}
+
 function calcBonus(record) {
   const hw    = ALLOWANCE.HOMEWORK[getGrade7(record.homework)] ?? 0;
   const nb    = ALLOWANCE.NOTEBOOK[getGrade6(record.notebook)] ?? 0;
   const nl    = ALLOWANCE.NAILS[getGradeNails(record.nails)] ?? 0;
-  const decl  = record.declarationDone ? ALLOWANCE.DECLARATION.full : 0;
+  const cl    = ALLOWANCE.CLEANUP[getGradeCleanup(record.cleanup)] ?? 0;
   const test1 = record.test1 ? ALLOWANCE.TEST.full : 0;
   const test2 = record.test2 ? ALLOWANCE.TEST.full : 0;
-  return hw + nb + nl + decl + test1 + test2;
+  return hw + nb + nl + cl + test1 + test2;
 }
 
 function calcTotal(record) {
@@ -144,7 +151,7 @@ function summarizeWeek(week) {
     homework:  days.filter(d => d.homework).length,
     notebook:  days.filter(d => d.notebook).length,
     nails:     days.filter(d => d.nails).length,
-    declarationDone: week.declarationDone,
+    cleanup:   days.filter(d => d.cleanup).length,
     test1: week.test1,
     test2: week.test2,
   };
