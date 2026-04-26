@@ -195,9 +195,11 @@ function render() {
   const days = Object.values(week.daily);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
+  const nl = days.filter(d => d.nails).length;
   const recorded = days.length;
   const hwBonusAmt = ALLOWANCE.HOMEWORK[getGrade7(hw)] ?? 0;
   const nbBonusAmt = ALLOWANCE.NOTEBOOK[getGrade6(nb)] ?? 0;
+  const nlBonusAmt = ALLOWANCE.NAILS[getGradeNails(nl)] ?? 0;
 
   document.getElementById('app').innerHTML = `
 
@@ -208,9 +210,14 @@ function render() {
         <div class="eval-label">宿題 or 予習復習 <span class="eval-sub">${hw}/7日</span></div>
         <div style="font-weight:700;color:${gradeColor7(hw)}">${gradeLabel7(hw)} → ${hwBonusAmt}円</div>
       </div>
+
       <div class="eval-row">
         <div class="eval-label">ノートチェック <span class="eval-sub">${nb}/6日</span></div>
-        <div style="font-weight:700;color:${gradeColorNB(nb)}">${gradeLabelNB(nb)} → ${nbBonusAmt}円</div>
+        <div style="font-weight:700;color:${gradeColor(nb)}">${gradeLabel(nb)} → ${nbBonusAmt}円</div>
+      </div>
+      <div class="eval-row">
+        <div class="eval-label">爪を噛まない <span class="eval-sub">${nl}/7日</span></div>
+        <div style="font-weight:700;color:${nl === 7 ? '#16a34a' : '#dc2626'}">${nl === 7 ? '○' : '×'} → ${nlBonusAmt}円</div>
       </div>
     </div>
 
@@ -262,9 +269,10 @@ function render() {
       <div class="breakdown">
         基本給: <span>${ALLOWANCE.BASE}円</span><br>
         宿題: <span>${hwBonusAmt}円</span> /
-        ノート: <span>${nbBonusAmt}円</span><br>
-        宣言: <span id="bd-decl">${parentData.declarationDone ? 50 : 0}円</span> /
-        テスト: <span id="bd-test">${(parentData.test1?150:0)+(parentData.test2?150:0)}円</span>
+        ノート: <span>${nbBonusAmt}円</span> /
+        爪: <span>${nlBonusAmt}円</span><br>
+        宣言: <span id="bd-decl">${parentData.declarationDone ? 100 : 0}円</span> /
+        テスト: <span id="bd-test">${(parentData.test1?100:0)+(parentData.test2?100:0)}円</span>
       </div>
     </div>
 
@@ -286,23 +294,19 @@ function render() {
   restoreButtons();
 }
 
-function gradeLabel(days) {
-  return days >= 5 ? '○' : days === 4 ? '△' : '×';
-}
+// 宿題（7日: 7=○, 5-6=△, 0-4=×）
 function gradeLabel7(days) {
-  return days >= 6 ? '○' : days === 5 ? '△' : '×';
-}
-function gradeColor(days) {
-  return days >= 5 ? '#16a34a' : days === 4 ? '#ca8a04' : '#dc2626';
+  return days === 7 ? '○' : days >= 5 ? '△' : '×';
 }
 function gradeColor7(days) {
-  return days >= 6 ? '#16a34a' : days === 5 ? '#ca8a04' : '#dc2626';
+  return days === 7 ? '#16a34a' : days >= 5 ? '#ca8a04' : '#dc2626';
 }
-function gradeLabelNB(days) {
-  return days >= 5 ? '○' : '×';
+// ノート（6日: 6=○, 4-5=△, 0-3=×）
+function gradeLabel(days) {
+  return days === 6 ? '○' : days >= 4 ? '△' : '×';
 }
-function gradeColorNB(days) {
-  return days >= 5 ? '#16a34a' : '#dc2626';
+function gradeColor(days) {
+  return days === 6 ? '#16a34a' : days >= 4 ? '#ca8a04' : '#dc2626';
 }
 
 function setDecl(val) {
@@ -341,8 +345,9 @@ function updateTotal() {
   const days = Object.values(week.daily);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
+  const nl = days.filter(d => d.nails).length;
   const summary = {
-    homework: hw, notebook: nb,
+    homework: hw, notebook: nb, nails: nl,
     declarationDone: parentData.declarationDone,
     test1: parentData.test1,
     test2: parentData.test2,
@@ -351,17 +356,18 @@ function updateTotal() {
   const el = document.getElementById('total-amount');
   if (el) el.textContent = total;
   const bd = document.getElementById('bd-decl');
-  if (bd) bd.textContent = (parentData.declarationDone ? 50 : 0) + '円';
+  if (bd) bd.textContent = (parentData.declarationDone ? 100 : 0) + '円';
   const bt = document.getElementById('bd-test');
-  if (bt) bt.textContent = ((parentData.test1?150:0)+(parentData.test2?150:0)) + '円';
+  if (bt) bt.textContent = ((parentData.test1?100:0)+(parentData.test2?100:0)) + '円';
 }
 
 async function confirm_() {
   const days = Object.values(week.daily);
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
+  const nl = days.filter(d => d.nails).length;
   const summary = {
-    homework: hw, notebook: nb,
+    homework: hw, notebook: nb, nails: nl,
     declarationDone: parentData.declarationDone,
     test1: parentData.test1,
     test2: parentData.test2,

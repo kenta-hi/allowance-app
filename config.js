@@ -8,39 +8,41 @@ const CONFIG = {
 // お小遣い設定
 const ALLOWANCE = {
   BASE: 500,
-  HOMEWORK:  { full: 100, half: 50 }, // 宿題 or 予習復習（7日ベース）
-  NOTEBOOK:  { full: 50,  half: 0  }, // ノートチェック（6日ベース）
-  DECLARATION: { full: 50 },
-  TEST:        { full: 150 },
+  HOMEWORK:    { full: 150, half: 100 }, // 宿題 or 予習復習（7日: 7=○, 5-6=△）
+  NOTEBOOK:    { full: 200, half: 100 }, // ノートチェック（6日: 6=○, 4-5=△）
+  NAILS:       { full: 100 },            // 爪を噛まない（7日全部のみ○）
+  DECLARATION: { full: 100 },
+  TEST:        { full: 100 },
 };
 
-// ○△×の判定（週6回ベース：ノートチェック用）
-function getGrade6(days) {
-  if (days >= 5) return 'full';
-  if (days === 4) return 'half';
-  return 'zero';
-}
-
-// ○△×の判定（週7回ベース：宿題 or 予習復習用）
+// ○△×の判定（宿題 or 予習復習：7日中7=○, 5-6=△, 0-4=×）
 function getGrade7(days) {
-  if (days >= 6) return 'full';
-  if (days === 5) return 'half';
+  if (days === 7) return 'full';
+  if (days >= 5) return 'half';
   return 'zero';
 }
 
-// ○×のみ（△なし：ノートチェック用）
-function getGradeNotebook(days) {
-  if (days >= 5) return 'full';
+// ○△×の判定（ノートチェック：6日中6=○, 4-5=△, 0-3=×）
+function getGrade6(days) {
+  if (days === 6) return 'full';
+  if (days >= 4) return 'half';
+  return 'zero';
+}
+
+// ○×のみ（爪を噛まない：7日全部のみ○）
+function getGradeNails(days) {
+  if (days === 7) return 'full';
   return 'zero';
 }
 
 function calcBonus(record) {
   const hw    = ALLOWANCE.HOMEWORK[getGrade7(record.homework)] ?? 0;
   const nb    = ALLOWANCE.NOTEBOOK[getGrade6(record.notebook)] ?? 0;
+  const nl    = ALLOWANCE.NAILS[getGradeNails(record.nails)] ?? 0;
   const decl  = record.declarationDone ? ALLOWANCE.DECLARATION.full : 0;
   const test1 = record.test1 ? ALLOWANCE.TEST.full : 0;
   const test2 = record.test2 ? ALLOWANCE.TEST.full : 0;
-  return hw + nb + decl + test1 + test2;
+  return hw + nb + nl + decl + test1 + test2;
 }
 
 function calcTotal(record) {
@@ -122,7 +124,7 @@ function getOrCreateWeek(data, weekId) {
   if (!week) {
     week = {
       id: weekId,
-      daily: {},       // { "2025-04-28": { homework, notebook } }
+      daily: {},       // { "2025-04-28": { homework, notebook, nails } }
       declaration: '',
       declarationDone: null,
       test1: null,
@@ -141,6 +143,7 @@ function summarizeWeek(week) {
   return {
     homework:  days.filter(d => d.homework).length,
     notebook:  days.filter(d => d.notebook).length,
+    nails:     days.filter(d => d.nails).length,
     declarationDone: week.declarationDone,
     test1: week.test1,
     test2: week.test2,

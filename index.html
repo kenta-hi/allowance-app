@@ -150,9 +150,8 @@
 <header>
   <h1>📚 今週の記録</h1>
   <div style="background:white;border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left;font-size:13px;color:#555;line-height:1.8;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
-    お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・小テスト①②・今週の宣言でボーナスが増えるよ。最大 <strong>1000円</strong> になります。<br>
-    宿題 or 予習復習は月〜日の7日チェック。ノートチェックは月〜土の6日チェック。<br>
-    【宿題】0〜4日 🙅 ・ 5日 🔼 ・ 6〜7日 🙆　【ノート】0〜4日 🙅 ・ 5〜6日 🙆
+    お小遣いは毎週 <strong>500円</strong> です。宿題 or 予習復習・ノートチェック・爪を噛まない・小テスト①②・今週の宣言でボーナスが増えるよ。最大 <strong>1250円</strong> になります。<br>
+    【宿題】0〜4日🙅 ・ 5〜6日🔼 ・ 7日🙆　【ノート】0〜3日🙅 ・ 4〜5日🔼 ・ 6日🙆　【爪】7日全部で+100円
   </div>
 </header>
 
@@ -190,7 +189,7 @@ async function init() {
     appData = await API.load();
     week = getOrCreateWeek(appData, weekId);
     if (!week.daily[todayStr]) {
-      week.daily[todayStr] = { homework: null, notebook: null };
+      week.daily[todayStr] = { homework: null, notebook: null, nails: null };
     }
     render();
   } catch(e) {
@@ -204,13 +203,13 @@ function selectDay(dateStr) {
   if (dateStr > todayStr) return; // 未来は選択不可
   selectedDate = dateStr;
   if (!week.daily[selectedDate]) {
-    week.daily[selectedDate] = { homework: null, notebook: null };
+    week.daily[selectedDate] = { homework: null, notebook: null, nails: null };
   }
   render();
 }
 
 function render() {
-  const record  = week.daily[selectedDate] ?? { homework: null, notebook: null };
+  const record  = week.daily[selectedDate] ?? { homework: null, notebook: null, nails: null };
   const summary = summarizeWeek(week);
   const total   = calcTotal(summary);
   const days    = getDaysOfWeek(weekId);
@@ -227,7 +226,7 @@ function render() {
         const isToday    = d === todayStr;
         const isSelected = d === selectedDate;
         const hasData    = week.daily[d] &&
-          (week.daily[d].homework !== null || week.daily[d].notebook !== null);
+          (week.daily[d].homework !== null || week.daily[d].notebook !== null || week.daily[d].nails !== null);
         const dayNum = new Date(d + 'T00:00:00').getDate();
         return `<button
           class="day-btn ${isSelected ? 'selected' : ''} ${isToday && !isSelected ? 'today' : ''} ${hasData ? 'has-data' : ''}"
@@ -244,6 +243,7 @@ function render() {
       <div class="card-title">${dateLabel}の記録</div>
       ${checkRow('homework', '📝 宿題 or 予習復習', record)}
       ${checkRow('notebook', '🗒️ ノートチェック', record)}
+      ${checkRow('nails',    '💅 爪を噛まない', record)}
     </div>
 
     <!-- 今週の宣言 -->
@@ -268,7 +268,8 @@ function render() {
     <div class="card">
       <div class="card-title">今週の進捗</div>
       ${progressRow('宿題 or 予習復習', summary.homework, ALLOWANCE.HOMEWORK, getGrade7, 7)}
-      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGradeNotebook, 6)}
+      ${progressRow('ノート',           summary.notebook, ALLOWANCE.NOTEBOOK, getGrade6, 6)}
+      ${progressRow('爪を噛まない',     summary.nails,    ALLOWANCE.NAILS,    getGradeNails, 7)}
     </div>
 
     <!-- 今週の予想 -->
@@ -305,7 +306,7 @@ function checkRow(key, label, record) {
 
 function toggle(key, value) {
   if (!week.daily[selectedDate]) {
-    week.daily[selectedDate] = { homework: null, notebook: null };
+    week.daily[selectedDate] = { homework: null, notebook: null, nails: null };
   }
   const rec = week.daily[selectedDate];
   rec[key] = (rec[key] === value) ? null : value;
