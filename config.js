@@ -26,7 +26,7 @@ function getGradeNotebookRatio(checks, total) {
   if (total === 0) return 'zero';
   const ratio = checks / total;
   if (ratio >= 0.9) return 'full';
-  if (ratio >= 0.7) return 'half';
+  if (ratio >= 0.6) return 'half'; // 4/6=0.667が含まれるよう0.7→0.6に調整
   return 'zero';
 }
 

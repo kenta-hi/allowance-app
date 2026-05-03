@@ -173,8 +173,6 @@ async function init() {
 let parentData = {
   test1: week?.test1 ?? null,
   test2: week?.test2 ?? null,
-  declarationDone: week?.declarationDone ?? null,
-  declaration: week?.declaration ?? '',
 };
 
 function render() {
@@ -226,7 +224,7 @@ function render() {
 
     <!-- テスト -->
     <div class="card">
-      <div class="card-title">📝 テスト（平均超えで+150円）</div>
+      <div class="card-title">📝 テスト（平均超えで+100円）</div>
       <div class="eval-row">
         <span class="eval-label">テスト① <span style="font-size:12px;color:#aaa">火曜</span></span>
         <div class="grade-box">

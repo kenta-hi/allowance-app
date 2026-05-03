@@ -268,7 +268,7 @@ function render() {
           <span class="amount-value" id="total-val">${total}</span>
           <span class="amount-unit">円</span>
         </div>
-        <div class="amount-base">※テスト・宣言は日曜に親が確認</div>
+        <div class="amount-base">※テストは日曜に親が確認</div>
       </div>
     </div>
 
@@ -298,8 +298,6 @@ function toggle(key, value) {
   const rec = week.daily[selectedDate];
   rec[key] = (rec[key] === value) ? null : value;
 
-  // ボタンの見た目だけ更新（re-renderなし）
-  const btns = document.querySelectorAll(`.check-row`);
   render(); // 進捗バーも更新したいので再描画
 }
 
@@ -317,7 +315,7 @@ function testCard(dateStr, week) {
       <div class="check-row" style="border:none">
         <span class="check-label">平均点との比較</span>
         <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
-          ${v === true ? '○ 平均超え +150円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+          ${v === true ? '○ 平均超え +100円' : v === false ? '× 平均未満' : '日曜に親が確認'}
         </span>
       </div>
     </div>`;
@@ -329,7 +327,7 @@ function testCard(dateStr, week) {
       <div class="check-row" style="border:none">
         <span class="check-label">平均点との比較</span>
         <span style="font-weight:700;color:${v === true ? '#16a34a' : v === false ? '#dc2626' : '#aaa'}">
-          ${v === true ? '○ 平均超え +150円' : v === false ? '× 平均未満' : '日曜に親が確認'}
+          ${v === true ? '○ 平均超え +100円' : v === false ? '× 平均未満' : '日曜に親が確認'}
         </span>
       </div>
     </div>`;
