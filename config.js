@@ -142,11 +142,8 @@ function getOrCreateWeek(data, weekId) {
 function summarizeWeek(week) {
   const entries = Object.entries(week.daily);
   const days = entries.map(([, d]) => d);
-  // ノートの分母：月〜土のうち1つでも入力があった日（日曜・全null除外）
-  const notebookTotal = entries.filter(([dateStr, d]) =>
-    new Date(dateStr + 'T00:00:00').getDay() !== 0 &&
-    (d.homework !== null || d.notebook !== null || d.nails !== null || d.cleanup !== null)
-  ).length;
+  // ノートの分母：ノートが明示的に設定された日（授業日のみtrue/falseを入力する運用）
+  const notebookTotal = days.filter(d => d.notebook !== null).length;
   return {
     homework:      days.filter(d => d.homework).length,
     notebook:      days.filter(d => d.notebook).length,

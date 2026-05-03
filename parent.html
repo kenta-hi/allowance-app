@@ -194,10 +194,7 @@ function render() {
   const nb = days.filter(d => d.notebook).length;
   const ht = days.filter(d => d.nails && d.cleanup).length;
   const recorded = days.length;
-  const nbTotal = entries.filter(([dateStr, d]) =>
-    new Date(dateStr + 'T00:00:00').getDay() !== 0 &&
-    (d.homework !== null || d.notebook !== null || d.nails !== null || d.cleanup !== null)
-  ).length;
+  const nbTotal = days.filter(d => d.notebook !== null).length;
   const nbPct = nbTotal > 0 ? Math.round(nb / nbTotal * 100) : 0;
   const hwBonusAmt = ALLOWANCE.HOMEWORK[getGrade7(hw)] ?? 0;
   const nbBonusAmt = ALLOWANCE.NOTEBOOK[getGradeNotebookRatio(nb, nbTotal)] ?? 0;
@@ -326,10 +323,7 @@ function updateTotal() {
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
   const ht = days.filter(d => d.nails && d.cleanup).length;
-  const nbTot = Object.entries(week.daily).filter(([dateStr, d]) =>
-    new Date(dateStr + 'T00:00:00').getDay() !== 0 &&
-    (d.homework !== null || d.notebook !== null || d.nails !== null || d.cleanup !== null)
-  ).length;
+  const nbTot = Object.values(week.daily).filter(d => d.notebook !== null).length;
   const summary = {
     homework: hw, notebook: nb, notebookTotal: nbTot, habits: ht,
     test1: parentData.test1,
@@ -347,10 +341,7 @@ async function confirm_() {
   const hw = days.filter(d => d.homework).length;
   const nb = days.filter(d => d.notebook).length;
   const ht2 = days.filter(d => d.nails && d.cleanup).length;
-  const nbTot2 = Object.entries(week.daily).filter(([dateStr, d]) =>
-    new Date(dateStr + 'T00:00:00').getDay() !== 0 &&
-    (d.homework !== null || d.notebook !== null || d.nails !== null || d.cleanup !== null)
-  ).length;
+  const nbTot2 = Object.values(week.daily).filter(d => d.notebook !== null).length;
   const summary = {
     homework: hw, notebook: nb, notebookTotal: nbTot2, habits: ht2,
     test1: parentData.test1,
